@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0b344b">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="ATP Events">
+<title>ATP Events</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="ATP Pickleball Club events — interclubs, tournaments and results.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Layout: app-launcher. Club header, one big yellow poster for the next event, then every other event as square tiles in a 2-column grid (3 on wider screens). */
+:root {
+  --court: #1a78a8;        /* water blue (darkened for text on white) */
+  --court-deep: #0b344b;   /* badge navy */
+  --ball: #d7db38;         /* ball lime */
+  --ball-ink: #0b344b;
+  --rim: #aec11d;          /* badge rim green */
+  --line: #ffffff; --bg: #eef3f4; --surface: #ffffff; --fg: #0b2433; --muted: #557080;
+  --rule: #d3e0e4;
+  --live: #d55a1a;         /* reed orange */
+  --display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --court: #4cb6e6; --court-deep: #0e3a53; --ball: #d7db38; --ball-ink: #0b344b; --rim: #aec11d; --line: #ffffff;
+    --bg: #071d2a; --surface: #0f2c3f; --fg: #e6f0f3; --muted: #93abb8; --rule: #1f4257;
+    --live: #f07a3a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --court: #4cb6e6; --court-deep: #0e3a53; --ball: #d7db38; --ball-ink: #0b344b; --rim: #aec11d; --line: #ffffff;
+    --bg: #071d2a; --surface: #0f2c3f; --fg: #e6f0f3; --muted: #93abb8; --rule: #1f4257;
+    --live: #f07a3a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.45; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 640px; margin: 0 auto; padding-block: 18px 32px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 16px; }
+
+/* Header */
+.top { display: flex; align-items: center; gap: 14px; padding-inline: 2px; }
+.logo { width: 64px; height: auto; flex: none; }
+.top .club { font-family: var(--display); font-weight: 800; font-size: 28px; line-height: 1; text-transform: uppercase; letter-spacing: .02em; }
+.top .club small { display: block; font-weight: 600; font-size: 13px; letter-spacing: .16em; color: var(--muted); margin-bottom: 2px; }
+
+/* Next-event poster */
+.hero { background: var(--ball); color: var(--ball-ink); border-radius: 22px; padding: 20px; display: grid; gap: 6px; text-decoration: none; position: relative; overflow: hidden; }
+.hero::before { content: ""; position: absolute; right: -44px; top: -44px; width: 180px; height: 180px; border-radius: 50%; border: 20px solid rgba(11, 52, 75, .07); }
+.hero .head { display: flex; align-items: center; justify-content: space-between; gap: 12px; position: relative; }
+.hero .eyebrow { font-family: var(--display); font-weight: 700; font-size: 13px; letter-spacing: .16em; text-transform: uppercase; position: relative; }
+.hero .eyebrow.live { color: var(--live); }
+.hero h2 { margin: 0; font-family: var(--display); font-weight: 800; font-size: clamp(34px, 9vw, 46px); line-height: .98; text-transform: uppercase; text-wrap: balance; position: relative; }
+.hero .vs { font-weight: 700; font-size: 17px; }
+.hero .when { font-size: 15px; }
+.hero .row { margin-top: 10px; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.hero .days { font-family: var(--display); line-height: .9; }
+.hero .days b { font-size: 68px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.hero .days span { display: block; font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; margin-top: 2px; }
+.hero .open { background: var(--ball-ink); color: var(--ball); border-radius: 999px; padding: 12px 18px; font-family: var(--display); font-weight: 700; font-size: 17px; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+
+/* Tiles */
+.label { margin: 8px 2px 0; font-family: var(--display); font-weight: 700; font-size: 13px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+@media (min-width: 600px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.tile { background: var(--surface); border: 1px solid var(--rule); border-radius: 18px; padding: 18px; max-width: 100%; min-width: 0;
+  display: flex; flex-direction: column; justify-content: space-between; gap: 12px; text-decoration: none; color: var(--fg); }
+.tile.dark { background: var(--court-deep); color: var(--line); border-color: transparent; }
+.tile h3 { margin: 0; font-family: var(--display); font-weight: 800; font-size: 28px; line-height: 1; text-transform: uppercase; overflow-wrap: anywhere; }
+.tile .s { font-size: 15px; opacity: .85; }
+.tile .res { font-family: var(--display); font-weight: 700; font-size: 16px; color: var(--ball); letter-spacing: .04em; text-transform: uppercase; }
+.tile .go { align-self: stretch; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; border-radius: 999px; background: var(--court-deep); color: var(--ball); font-family: var(--display); font-weight: 700; font-size: 19px; letter-spacing: .06em; text-transform: uppercase; }
+.tile.dark .go { background: var(--ball); color: var(--ball-ink); }
+.tile .soon { align-self: stretch; display: flex; align-items: center; justify-content: center; min-height: 52px; border-radius: 999px; border: 2px dashed var(--rule); color: var(--muted); font-family: var(--display); font-weight: 700; font-size: 19px; letter-spacing: .06em; text-transform: uppercase; }
+.tile.more { border-style: dashed; background: transparent; color: var(--muted); justify-content: center; align-items: center; text-align: center; font-size: 15px; min-height: 64px; }
+/* Club logos ("ATP vs Dural") */
+.clubs { display: inline-flex; align-items: center; gap: 6px; flex: none; }
+.clubs .x { font-family: var(--display); font-weight: 700; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; opacity: .7; }
+.crest { width: 34px; height: 34px; object-fit: contain; display: block; }
+.clubs .crest.wide { width: auto; height: 30px; display: flex; align-items: center; flex: none; }
+.clubs .crest.wide img { height: 100%; width: auto; max-width: none; flex: none; display: block; }
+.crest.wide .dk { display: none; }
+.hero .clubs .crest.wide { width: auto; height: 40px; }
+.tile .clubs .crest.wide { width: auto; height: 32px; }
+.clubs .bar { width: 2px; align-self: stretch; margin: 6px 6px; background: var(--rule); border-radius: 2px; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .crest.wide .lt { display: none; }
+  :root:not([data-theme="light"]) .crest.wide .dk { display: block; }
+}
+:root[data-theme="dark"] .crest.wide .lt { display: none; }
+:root[data-theme="dark"] .crest.wide .dk { display: block; }
+.crest.token { border-radius: 50%; display: block; padding: 5px; box-shadow: 0 0 0 2px var(--rim); }
+.crest.token img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.hero .crest.token { padding: 8px; box-shadow: 0 0 0 3px var(--ball-ink); }
+.crest.init { border-radius: 50%; background: var(--court-deep); color: var(--line); border: 2px solid var(--rim);
+  display: grid; place-items: center; font-family: var(--display); font-weight: 800; font-size: 13px; letter-spacing: .02em; }
+.hero .crest { width: 56px; height: 56px; }
+.hero .crest.init { font-size: 19px; border-width: 3px; }
+.tile .crest { width: 48px; height: 48px; }
+.tile .crest.init { font-size: 14px; }
+.tile .crest.init { background: var(--bg); color: var(--fg); }
+.tile.dark .crest.init { background: var(--court); color: var(--line); }
+.tile .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; flex-wrap: wrap; }
+.chip { align-self: flex-start; font-family: var(--display); font-weight: 700; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; }
+.chip.live { background: var(--live); border-color: var(--live); color: #fff; }
+
+a:focus-visible { outline: 3px solid var(--court); outline-offset: 3px; }
+.tile.dark:focus-visible, .hero:focus-visible { outline-color: var(--court); }
+
+/* Christmas theme (flyer colours: banner green, Santa red, fairy-light gold) */
+.tile.xmas, .hero.xmas {
+  --xg: #17572f; --xg-deep: #0f3f22; --xr: #c8202a; --xgold: #f2c14e;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27200%27 height=%2750%27 viewBox=%270 0 200 50%27%3E%3Crect x=%276%27 y=%2718%27 width=%2734%27 height=%2732%27 rx=%272%27 fill=%27%23d62828%27/%3E%3Crect x=%274.5%27 y=%2718%27 width=%2737%27 height=%275%27 rx=%271.5%27 fill=%27%23b51f1f%27/%3E%3Crect x=%2720.5%27 y=%2718%27 width=%275%27 height=%2732%27 fill=%27%23f2c14e%27/%3E%3Cpath d=%27M23.0 18 c-3 -7 -11 -7 -10 -2 c1 4 7 3 10 2 Z M23.0 18 c3 -7 11 -7 10 -2 c-1 4 -7 3 -10 2 Z%27 fill=%27%23f2c14e%27/%3E%3Crect x=%2746%27 y=%2727%27 width=%2726%27 height=%2723%27 rx=%272%27 fill=%27%23f2c14e%27/%3E%3Crect x=%2744.5%27 y=%2727%27 width=%2729%27 height=%275%27 rx=%271.5%27 fill=%27%23d9a93a%27/%3E%3Crect x=%2756.5%27 y=%2727%27 width=%275%27 height=%2723%27 fill=%27%23c8202a%27/%3E%3Cpath d=%27M59.0 27 c-3 -7 -11 -7 -10 -2 c1 4 7 3 10 2 Z M59.0 27 c3 -7 11 -7 10 -2 c-1 4 -7 3 -10 2 Z%27 fill=%27%23c8202a%27/%3E%3Crect x=%2778%27 y=%2712%27 width=%2730%27 height=%2738%27 rx=%272%27 fill=%27%232f7fd8%27/%3E%3Crect x=%2776.5%27 y=%2712%27 width=%2733%27 height=%275%27 rx=%271.5%27 fill=%27%232667b3%27/%3E%3Crect x=%2790.5%27 y=%2712%27 width=%275%27 height=%2738%27 fill=%27%23ffffff%27/%3E%3Cpath d=%27M93.0 12 c-3 -7 -11 -7 -10 -2 c1 4 7 3 10 2 Z M93.0 12 c3 -7 11 -7 10 -2 c-1 4 -7 3 -10 2 Z%27 fill=%27%23ffffff%27/%3E%3Crect x=%27114%27 y=%2724%27 width=%2726%27 height=%2726%27 rx=%272%27 fill=%27%238e44ad%27/%3E%3Crect x=%27112.5%27 y=%2724%27 width=%2729%27 height=%275%27 rx=%271.5%27 fill=%27%2376389a%27/%3E%3Crect x=%27124.5%27 y=%2724%27 width=%275%27 height=%2726%27 fill=%27%23f2c14e%27/%3E%3Cpath d=%27M127.0 24 c-3 -7 -11 -7 -10 -2 c1 4 7 3 10 2 Z M127.0 24 c3 -7 11 -7 10 -2 c-1 4 -7 3 -10 2 Z%27 fill=%27%23f2c14e%27/%3E%3Crect x=%27146%27 y=%2719%27 width=%2722%27 height=%2731%27 rx=%272%27 fill=%27%235fbf68%27/%3E%3Crect x=%27144.5%27 y=%2719%27 width=%2725%27 height=%275%27 rx=%271.5%27 fill=%27%234ea457%27/%3E%3Crect x=%27154.5%27 y=%2719%27 width=%275%27 height=%2731%27 fill=%27%23c8202a%27/%3E%3Cpath d=%27M157.0 19 c-3 -7 -11 -7 -10 -2 c1 4 7 3 10 2 Z M157.0 19 c3 -7 11 -7 10 -2 c-1 4 -7 3 -10 2 Z%27 fill=%27%23c8202a%27/%3E%3Crect x=%27173%27 y=%2730%27 width=%2722%27 height=%2720%27 rx=%272%27 fill=%27%23ffffff%27/%3E%3Crect x=%27171.5%27 y=%2730%27 width=%2725%27 height=%275%27 rx=%271.5%27 fill=%27%23e3ece6%27/%3E%3Crect x=%27181.5%27 y=%2730%27 width=%275%27 height=%2720%27 fill=%27%232f9e57%27/%3E%3Cpath d=%27M184.0 30 c-3 -7 -11 -7 -10 -2 c1 4 7 3 10 2 Z M184.0 30 c3 -7 11 -7 10 -2 c-1 4 -7 3 -10 2 Z%27 fill=%27%232f9e57%27/%3E%3C/svg%3E") left bottom / 200px 50px repeat-x,
+    linear-gradient(transparent calc(100% - 6px), #f4f8f5 calc(100% - 6px)),
+    linear-gradient(160deg, var(--xg) 0%, var(--xg-deep) 100%);
+  color: #fff; border: 0;
+  position: relative; overflow: hidden; padding-top: 44px; padding-bottom: 62px;
+}
+.tile.xmas::before, .hero.xmas::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 22px; border: 0; border-radius: 0; width: auto;
+  background:
+    radial-gradient(ellipse 5px 7px at 12px 13px, #ff5a4f 98%, transparent) 0 0 / 56px 22px repeat-x,
+    radial-gradient(ellipse 5px 7px at 26px 15px, var(--xgold) 98%, transparent) 0 0 / 56px 22px repeat-x,
+    radial-gradient(ellipse 5px 7px at 40px 13px, #5ec8ff 98%, transparent) 0 0 / 56px 22px repeat-x,
+    radial-gradient(ellipse 5px 7px at 54px 15px, #7be07f 98%, transparent) 0 0 / 56px 22px repeat-x,
+    linear-gradient(#0b2a17, #0b2a17) 0 5px / 100% 2px no-repeat;
+}
+.tile.xmas::after, .hero.xmas::after {
+  content: ""; position: absolute; right: -22px; top: 26px; width: 110px; height: 110px; opacity: .09; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='white' stroke-width='5' stroke-linecap='round'%3E%3Cg transform='translate(50 50)'%3E%3Cg id='a'%3E%3Cpath d='M0 0V-44M0-30l-10-10M0-30l10-10M0-16l-8-8M0-16l8-8'/%3E%3C/g%3E%3Cuse href='%23a' transform='rotate(60)'/%3E%3Cuse href='%23a' transform='rotate(120)'/%3E%3Cuse href='%23a' transform='rotate(180)'/%3E%3Cuse href='%23a' transform='rotate(240)'/%3E%3Cuse href='%23a' transform='rotate(300)'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
+}
+.hero.xmas::after { display: none; }
+.santa { position: relative; display: inline-block; flex: none; }
+.santa::after {
+  content: ""; position: absolute; left: -22%; top: -52%; width: 88%; aspect-ratio: 64 / 52;
+  background: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 52%27%3E%3Cpath d=%27M10 38 C11 20 22 7 38 7 C51 7 59 16 56 31 C52 23 46 19 40 21 C42 27 42 32 42 38 Z%27 fill=%27%23d62828%27/%3E%3Cpath d=%27M38 7 C51 7 59 16 56 31%27 stroke=%27%23a3161f%27 stroke-width=%273%27 fill=%27none%27/%3E%3Crect x=%273%27 y=%2733%27 width=%2746%27 height=%2713%27 rx=%276.5%27 fill=%27%23ffffff%27/%3E%3Ccircle cx=%2756%27 cy=%2733%27 r=%276.5%27 fill=%27%23ffffff%27/%3E%3C/svg%3E") center / contain no-repeat; transform: rotate(-16deg); pointer-events: none;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,.25));
+}
+.tile.xmas h3 { color: #fff; }
+.tile.xmas .s { color: #e6f2e9; opacity: 1; }
+.tile.xmas .chip { color: var(--xgold); }
+.tile.xmas .go, .hero.xmas .open { background: var(--xr); color: #fff; position: relative; z-index: 1; }
+.tile.xmas .crest.token, .hero.xmas .crest.token { box-shadow: 0 0 0 2px var(--xgold); }
+.hero.xmas .eyebrow { color: var(--xgold); }
+.hero.xmas .days b { color: var(--xgold); }
+.tile.xmas:focus-visible, .hero.xmas:focus-visible { outline-color: var(--xgold); }
+
+/* Picture cards (ready-made event artwork) */
+.tile.banner, .hero.banner { padding: 0; border: 0; overflow: hidden; background: var(--court-deep); display: block; }
+.tile.banner img, .hero.banner img { display: block; width: 100%; height: auto; }
+.hero.banner { border-radius: 22px; }
+.hero.banner::before { display: none; }
+.hero.banner .count { display: flex; align-items: baseline; justify-content: center; gap: 10px; padding: 12px 16px; color: #fff; background: #0f3f22;
+  font-family: var(--display); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: 15px; }
+.hero.banner .count b { font-size: 34px; color: #f2c14e; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+
+/* Test version strip */
+.testbar { background: #b3261e; color: #fff; border-radius: 12px; padding: 10px 14px; font-size: 14px; line-height: 1.35; }
+.testbar b { font-family: var(--display); font-size: 16px; letter-spacing: .08em; text-transform: uppercase; margin-right: 6px; }
+
+/* Notifications card */
+.notify { background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; padding: 14px 16px; display: grid; gap: 8px; font-size: 15px; }
+.notify strong { font-family: var(--display); font-size: 18px; letter-spacing: .04em; text-transform: uppercase; }
+.notify .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.notify button { min-height: 48px; padding: 0 20px; border-radius: 999px; border: 0; background: var(--court-deep); color: var(--ball); font: 700 17px var(--display); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
+.notify button.link { min-height: 40px; padding: 0; background: none; color: var(--court); font-size: 15px; text-decoration: underline; text-underline-offset: 3px; }
+.notify button:focus-visible { outline: 3px solid var(--court); outline-offset: 2px; }
+.notify button:disabled { opacity: .6; cursor: default; }
+.notify .on { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+.notify .on::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--rim); }
+.notify .note { color: var(--muted); font-size: 14px; }
+
+/* Install tip */
+.install { background: var(--surface); border: 1px dashed var(--rule); border-radius: 14px; padding: 14px; display: grid; gap: 8px; font-size: 15px; }
+.install strong { font-family: var(--display); font-size: 17px; letter-spacing: .04em; text-transform: uppercase; }
+.install button { justify-self: start; min-height: 44px; padding: 0 18px; border-radius: 999px; border: 0; background: var(--court-deep); color: var(--line); font: 700 16px var(--display); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
+.install button:focus-visible { outline: 3px solid var(--court); outline-offset: 2px; }
+footer { color: var(--muted); font-size: 13px; text-align: center; }
+footer a { color: var(--court); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; display: inline-block; padding-block: 8px; }
+@media (prefers-reduced-motion: no-preference) {
+  .hero, .tile { transition: transform .12s ease; }
+  .hero:active, a.tile:active { transform: scale(.98); }
+}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <div class="testbar" id="testbar" hidden><b>Test version</b>Changes and notifications here only reach testers, not members.</div>
+  <header class="top">
+    <img class="logo" src="icons/logo.png" alt="ATP Pickleball Club" width="470" height="512">
+    <div class="club"><small>ATP Pickleball Club</small>Events</div>
+      </header>
+  <main id="app"></main>
+  <div class="notify" id="notify" hidden></div>
+  <div class="install" id="install" hidden></div>
+  <footer>ATP Pickleball Club · <a href="https://www.atppickleballclub.com.au">www.atppickleballclub.com.au</a></footer>
+</div>
+
+<script>
+/* ===== LIVE OR TEST VERSION =====
+   The same index.html runs in both repos. It works out which one it is from
+   its own address: anything with "eventsapp-test" in it is the TEST app.
+   oneSignalAppId: paste each OneSignal App ID here ("" = notifications off). */
+const SITES = {
+  live: { oneSignalAppId: "",  counter: true  },   // eventsapp.atppickleballclub.com.au
+  test: { oneSignalAppId: "",  counter: false }    // atppickleballclub.github.io/eventsapp-test/
+};
+const IS_TEST = /eventsapp-test/i.test(location.hostname + location.pathname);
+const SITE = IS_TEST ? SITES.test : SITES.live;
+const ON_REAL_SITE = location.protocol === "https:" && /atppickleballclub|github\.io/.test(location.hostname);
+if (IS_TEST) {
+  document.getElementById("testbar").hidden = false;
+  document.title = "ATP Events TEST";
+  const t = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+  if (t) t.setAttribute("content", "ATP TEST");
+}
+/* ================================= */
+
+/* ===== EDIT YOUR EVENTS HERE =====
+   name:   full name (shown on the big poster)
+   short:  shorter name for the square tiles (optional)
+   date:   "YYYY-MM-DD", or null if not set yet
+   url:    the event's own site (null = "Coming soon")
+   flyer:  an image in the flyers folder, shown when there's no site yet
+   theme:  "xmas" for the Christmas look (optional)
+   banner: a ready-made picture used as the whole card (optional)
+   clubs:  logos to show, e.g. ["atp", "dural"] (see CLUBS below)
+   result: shown once the event is over                          */
+const EVENTS = [
+  {
+    name: "Defend the Kitchen: Interclub II",
+    short: "Defend the Kitchen",
+    sub: "ATP vs Port Stephens",
+    clubs: ["atp", "ps"],
+    date: "2027-01-31",
+    time: "8:30am – 12pm",
+    venue: "Jonas Bradley Park",
+    url: "https://atpvsps.atppickleballclub.com.au"
+  },
+  {
+    name: "Back by Popular Demand",
+    sub: "ATP 3x3 Christmas intraclub",
+    clubs: ["atp"],
+    date: "2026-12-13",
+    time: "10am – 1pm",
+    theme: "xmas",
+    banner: "flyers/back-by-popular-demand-card.jpg",
+    url: "https://intraclub.atppickleballclub.com.au",
+    flyer: "flyers/dink-the-halls.jpg"
+  },
+  {
+    name: "DUPR Rating Sessions",
+    clubs: ["atp", "dupr"],
+    date: null,
+    url: null
+  },
+  {
+    name: "Interclub Challenge",
+    sub: "ATP vs Dural",
+    clubs: ["atp", "dural"],
+    date: "2026-11-21",
+    url: "https://interclub.atppickleballclub.com.au"
+  }
+];
+/* Club logos. Use a club's key in an event's  clubs: [...]  list.
+   logo: image file (null = show the initials in a badge instead)
+   bg:   colour of the round badge behind the logo (optional)       */
+const CLUBS = {
+  atp:   { name: "ATP Pickleball Club",           initials: "ATP", logo: "icons/logo.png" },
+  dural: { name: "The Centre Dural Pickleball Club", initials: "DPC", logo: "icons/dural.png", bg: "#ffffff" },
+  ps:    { name: "Port Stephens Pickleball Club", initials: "PS",  logo: "icons/ps.png",    bg: "#0b344b" },
+  // Wide logos (wordmarks). logoDark = the version shown when the phone is in dark mode.
+  dupr:  { name: "DUPR", logo: "icons/dupr-blue.png", logoDark: "icons/dupr-white.png", wide: true }
+};
+/* ================================= */
+
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const today = new Date(); today.setHours(0,0,0,0);
+const parse = s => { if (!s) return null; const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const status = e => { const d = parse(e.date); if (e.done) return "results"; if (!d) return "tba"; if (+d === +today) return "live"; return d < today ? "results" : "upcoming"; };
+const daysTo = e => Math.round((parse(e.date) - today) / 86400000);
+const longDate = e => parse(e.date).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "long", year: "numeric" });
+const shortDate = e => { const d = parse(e.date); return d ? `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}` : ""; };
+
+function crests(e) {
+  const keys = (e.clubs || []).filter(k => CLUBS[k]);
+  const list = keys.map(k => CLUBS[k]);
+  if (!list.length) return "";
+  const one = c => c.wide
+    ? `<span class="crest wide" role="img" aria-label="${esc(c.name)}"><img class="lt" src="${esc(c.logo)}" alt="">${c.logoDark ? `<img class="dk" src="${esc(c.logoDark)}" alt="">` : ""}</span>`
+    : c.logo && c.bg
+    ? `<span class="crest token" style="background:${esc(c.bg)}"><img src="${esc(c.logo)}" alt="${esc(c.name)}"></span>`
+    : c.logo ? `<img class="crest" src="${esc(c.logo)}" alt="${esc(c.name)}">`
+    : `<span class="crest init" role="img" aria-label="${esc(c.name)}">${esc(c.initials)}</span>`;
+  const sep = list.some(c => c.wide) ? '<span class="bar" aria-hidden="true"></span>' : '<span class="x" aria-hidden="true">vs</span>';
+  const hat = (html, i) => e.theme === "xmas" && keys[i] === "atp" ? `<span class="santa">${html}</span>` : html;
+  return `<span class="clubs">${list.map((c, i) => hat(one(c), i)).join(sep)}</span>`;
+}
+
+function hero(e) {
+  const s = status(e), n = daysTo(e);
+  if (e.banner) {
+    const link = e.url || e.flyer;
+    const inner = `<img src="${esc(e.banner)}" alt="${esc(bannerAlt(e))}">
+      <span class="count">${s === "live" ? "<b>On today</b>" : `<span>Next up</span><b>${n}</b><span>${n === 1 ? "day to go" : "days to go"}</span>`}</span>`;
+    return link ? `<a class="hero banner" href="${esc(link)}">${inner}</a>` : `<div class="hero banner">${inner}</div>`;
+  }
+  const link = e.url || e.flyer;
+  const tag = link ? "a" : "div";
+  const href = link ? ` href="${esc(link)}"` : "";
+  return `<${tag} class="hero${e.theme ? " " + esc(e.theme) : ""}"${href}>
+    <span class="head"><span class="eyebrow${s === "live" ? " live" : ""}">${s === "live" ? "On today" : "Next up"}</span>${crests(e)}</span>
+    <h2>${esc(e.name)}</h2>
+    <span class="vs">${esc(e.sub)}</span>
+    <span class="when">${esc(longDate(e))}${e.time ? " · " + esc(e.time) : ""}${e.venue ? " · " + esc(e.venue) : ""}</span>
+    <span class="row">
+      <span class="days">${s === "live" ? `<b>Today</b>` : `<b>${n}</b><span>${n === 1 ? "day to go" : "days to go"}</span>`}</span>
+      ${e.url ? `<span class="open">${s === "live" ? "Live scores" : "Open"} →</span>` : e.flyer ? `<span class="open">View flyer →</span>` : ""}
+    </span>
+  </${tag}>`;
+}
+
+function bannerAlt(e) {
+  return [e.name, e.sub, e.date ? longDate(e) : "", e.time].filter(Boolean).join(", ");
+}
+
+function tile(e) {
+  const s = status(e);
+  const link = e.url || e.flyer;
+  if (e.banner) {
+    const img = `<img src="${esc(e.banner)}" alt="${esc(bannerAlt(e))}" loading="lazy">`;
+    return link ? `<a class="tile banner" href="${esc(link)}">${img}</a>` : `<div class="tile banner">${img}</div>`;
+  }
+  const chip = { upcoming: "Upcoming", live: "On today", results: "Result", tba: "Coming soon" }[s];
+  const when = shortDate(e);
+  const foot = s === "results" && e.result ? `<span class="res">${esc(e.result)}</span>`
+    : e.url ? `<span class="go">${s === "results" ? "Results" : "Open"} →</span>`
+    : e.flyer ? `<span class="go">View flyer →</span>`
+    : `<span class="soon">${e.date ? "More details soon" : "Dates to be announced"}</span>`;
+  const logos = crests(e);
+  const showChip = !logos || s !== "upcoming";
+  const inner = `<span class="top">${logos}${showChip ? `<span class="chip${s === "live" ? " live" : ""}">${chip}</span>` : ""}</span>
+    <span><h3>${esc(e.short || e.name)}</h3>${e.sub || when ? `<span class="s">${esc(e.sub)}${e.sub && when ? "<br>" : ""}${esc(when)}</span>` : ""}</span>
+    ${foot}`;
+  const cls = "tile" + (s === "results" ? " dark" : "") + (e.theme ? " " + esc(e.theme) : "");
+  return link ? `<a class="${cls}" href="${esc(link)}">${inner}</a>`
+               : `<div class="${cls}">${inner}</div>`;
+}
+
+function render() {
+  const up = EVENTS.filter(e => status(e) !== "results")
+    .sort((a, b) => (parse(a.date) ?? Infinity) - (parse(b.date) ?? Infinity));
+  const past = EVENTS.filter(e => status(e) === "results")
+    .sort((a, b) => (parse(b.date) ?? 0) - (parse(a.date) ?? 0));
+  const next = up.find(e => ["live", "upcoming"].includes(status(e)));
+  const rest = [...up.filter(e => e !== next), ...past];
+  document.getElementById("app").innerHTML = `
+    ${next ? hero(next) : ""}
+    ${rest.length ? `<div class="label">${next ? "More events" : "Events"}</div>
+    <div class="grid">${rest.map(tile).join("")}<div class="tile more">More events announced soon</div></div>` : ""}`;
+  document.getElementById("app").style.cssText = "display:grid;gap:16px";
+}
+render();
+
+/* ===== Install as an app ===== */
+(function installTip() {
+  const box = document.getElementById("install");
+  const standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
+  if (standalone) return;
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  let deferred = null;
+  window.addEventListener("beforeinstallprompt", ev => {
+    ev.preventDefault(); deferred = ev;
+    box.innerHTML = `<strong>Get the app</strong><div>Add ATP Events to your home screen.</div><button type="button" id="install-btn">Install</button>`;
+    box.hidden = false;
+    document.getElementById("install-btn").addEventListener("click", async () => {
+      deferred.prompt(); await deferred.userChoice; deferred = null; box.hidden = true;
+    });
+  });
+  if (isIOS) {
+    box.innerHTML = `<strong>Get the app</strong><div>Tap the <b>Share</b> button in Safari, then <b>Add to Home Screen</b>.</div>`;
+    box.hidden = false;
+  }
+})();
+
+if ("serviceWorker" in navigator && location.protocol === "https:" && /atppickleballclub|github\.io/.test(location.hostname)) {
+  // Keep installed copies up to date:
+  //  - check for a new version every time the app is opened or brought back
+  //  - if it's been in the background for 30+ minutes, reload it fresh
+  //  - when a new version installs, reload once so it shows straight away
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!hadController || reloaded) return;
+    reloaded = true;
+    location.reload();
+  });
+  navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then((reg) => {
+    let hiddenAt = 0;
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) { hiddenAt = Date.now(); return; }
+      reg.update().catch(() => {});
+      if (hiddenAt && Date.now() - hiddenAt > 30 * 60 * 1000) location.reload();
+    });
+  }).catch(() => {});
+}
+/* ===== Usage counter =====
+   Once a day per phone, saves an anonymous note to the ATP Events Firebase:
+   a random ID for this phone, the date, iPhone/Android, and whether it was
+   opened from the home screen. No names or personal details.            */
+(function countVisit() {
+  if (!ON_REAL_SITE || !SITE.counter) return;
+  const FB_KEY = "AIzaSyAykyvBpr-3H4_gCm--8tDN2IhV-2EFfj0";
+  const FB_PROJECT = "atp-events";
+  const send = () => {
+    let id, last;
+    try {
+      id = localStorage.getItem("atpDevice");
+      if (!id) { id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2)).slice(0, 36); localStorage.setItem("atpDevice", id); }
+      last = localStorage.getItem("atpLastCount");
+    } catch (e) { return; }
+    const installed = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+    const ua = navigator.userAgent;
+    const platform = /iphone|ipad|ipod/i.test(ua) || (/macintosh/i.test(ua) && navigator.maxTouchPoints > 1) ? "ios" : /android/i.test(ua) ? "android" : "other";
+    const date = new Date().toLocaleDateString("en-CA", { timeZone: "Australia/Sydney" });
+    const stamp = date + (installed ? "-app" : "-web");
+    if (last === stamp) return;
+    const docId = date + "_" + id + (installed ? "_app" : "_web");
+    fetch(`https://firestore.googleapis.com/v1/projects/${FB_PROJECT}/databases/(default)/documents/appVisits?documentId=${encodeURIComponent(docId)}&key=${FB_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fields: {
+        date: { stringValue: date }, device: { stringValue: id },
+        installed: { booleanValue: installed }, platform: { stringValue: platform }
+      } })
+    }).then(r => { if (r.ok || r.status === 409) { try { localStorage.setItem("atpLastCount", stamp); } catch (e) {} } }).catch(() => {});
+  };
+  send();
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) send(); });
+})();
+/* ===== Notifications (OneSignal) =====
+   Only runs when this version has a OneSignal App ID (see SITES at the top).
+   OneSignal's own worker lives in push/onesignal/, separate from the app's
+   sw.js, so the offline and auto-update setup is untouched.             */
+(function notifications() {
+  const box = document.getElementById("notify");
+  if (!ON_REAL_SITE || !SITE.oneSignalAppId || !("serviceWorker" in navigator)) return;
+  const standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (/macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+
+  // iPhone only allows notifications once the app is on the home screen.
+  if (isIOS && !standalone) {
+    box.innerHTML = `<strong>Notifications</strong><div>Add ATP Events to your home screen first (Share, then Add to Home Screen), then open it from there to turn on notifications.</div>`;
+    box.hidden = false;
+    return;
+  }
+
+  const base = location.pathname.replace(/[^/]*$/, "");          // "/" or "/eventsapp-test/"
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  const sdk = document.createElement("script");
+  sdk.src = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
+  sdk.defer = true;
+  document.head.appendChild(sdk);
+
+  window.OneSignalDeferred.push(async function (OneSignal) {
+    try {
+      await OneSignal.init({
+        appId: SITE.oneSignalAppId,
+        serviceWorkerPath: base.slice(1) + "push/onesignal/OneSignalSDKWorker.js",
+        serviceWorkerParam: { scope: base + "push/onesignal/" },
+        notifyButton: { enable: false }
+      });
+    } catch (e) { return; }
+    if (!OneSignal.Notifications.isPushSupported()) return;
+
+    const sub = OneSignal.User.PushSubscription;
+    function show() {
+      const blocked = typeof Notification !== "undefined" && Notification.permission === "denied";
+      if (sub.optedIn) {
+        box.innerHTML = `<div class="row"><span class="on">Notifications are on</span><button type="button" class="link" id="notify-off">Turn off</button></div>
+          <div class="note">You'll get event updates from ATP Pickleball Club${IS_TEST ? " (test messages only)" : ""}.</div>`;
+        document.getElementById("notify-off").onclick = async () => { await sub.optOut(); show(); };
+      } else if (blocked) {
+        box.innerHTML = `<strong>Notifications are blocked</strong><div>To get event updates, allow notifications for ATP Events in your phone's settings, then come back here.</div>`;
+      } else {
+        box.innerHTML = `<strong>Get event updates</strong><div>Draws, start times and results sent straight to your phone.</div>
+          <div><button type="button" id="notify-on">Turn on notifications</button></div>`;
+        const btn = document.getElementById("notify-on");
+        btn.onclick = async () => {
+          btn.disabled = true; btn.textContent = "Turning on…";
+          try { await sub.optIn(); } catch (e) {}
+          show();
+        };
+      }
+      box.hidden = false;
+    }
+    sub.addEventListener("change", show);
+    OneSignal.Notifications.addEventListener("permissionChange", show);
+    show();
+  });
+})();
+</script>
+</body>
+</html>
