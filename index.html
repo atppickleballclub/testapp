@@ -216,13 +216,13 @@ footer a { color: var(--court); font-weight: 600; text-decoration: underline; te
 <script>
 /* ===== LIVE OR TEST VERSION =====
    The same index.html runs in both repos. It works out which one it is from
-   its own address: anything with "eventsapp-test" in it is the TEST app.
+   its own address: anything with "eventsapp-test" or "/testapp/" in it is the TEST app.
    oneSignalAppId: paste each OneSignal App ID here ("" = notifications off). */
 const SITES = {
   live: { oneSignalAppId: "",  counter: true  },   // eventsapp.atppickleballclub.com.au
-  test: { oneSignalAppId: "70ff0fbf-bc3e-45eb-ba4f-7df4952b215c",  counter: false }    // atppickleballclub.github.io/eventsapp-test/
+  test: { oneSignalAppId: "70ff0fbf-bc3e-45eb-ba4f-7df4952b215c",  counter: false }    // atppickleballclub.github.io/testapp/
 };
-const IS_TEST = /eventsapp-test/i.test(location.hostname + location.pathname);
+const IS_TEST = /eventsapp-test|\/testapp\//i.test(location.hostname + location.pathname);
 const SITE = IS_TEST ? SITES.test : SITES.live;
 const ON_REAL_SITE = location.protocol === "https:" && /atppickleballclub|github\.io/.test(location.hostname);
 if (IS_TEST) {
@@ -480,11 +480,15 @@ if ("serviceWorker" in navigator && location.protocol === "https:" && /atppickle
     return;
   }
 
+  // Test app only: show what's happening, so problems can be spotted.
+  const report = (msg) => { if (!IS_TEST) return; box.innerHTML = `<strong>Notifications (test)</strong><div class="note">${esc(msg)}</div>`; box.hidden = false; };
+  report("Starting notifications…");
   const base = location.pathname.replace(/[^/]*$/, "");          // "/" or "/eventsapp-test/"
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   const sdk = document.createElement("script");
   sdk.src = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
   sdk.defer = true;
+  sdk.onerror = () => report("Couldn't load OneSignal. Check the internet connection or any ad/content blocker.");
   document.head.appendChild(sdk);
 
   window.OneSignalDeferred.push(async function (OneSignal) {
@@ -498,8 +502,8 @@ if ("serviceWorker" in navigator && location.protocol === "https:" && /atppickle
         // "Turn on notifications" button asks instead.
         promptOptions: { slidedown: { prompts: [{ type: "push", autoPrompt: false }] } }
       });
-    } catch (e) { return; }
-    if (!OneSignal.Notifications.isPushSupported()) return;
+    } catch (e) { report("OneSignal didn't start: " + (e && e.message ? e.message : e)); return; }
+    if (!OneSignal.Notifications.isPushSupported()) { report("This browser can't receive push notifications."); return; }
 
     const sub = OneSignal.User.PushSubscription;
     function show() {
