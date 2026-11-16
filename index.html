@@ -220,7 +220,7 @@ footer a { color: var(--court); font-weight: 600; text-decoration: underline; te
    oneSignalAppId: paste each OneSignal App ID here ("" = notifications off). */
 const SITES = {
   live: { oneSignalAppId: "",  counter: true  },   // eventsapp.atppickleballclub.com.au
-  test: { oneSignalAppId: "",  counter: false }    // atppickleballclub.github.io/eventsapp-test/
+  test: { oneSignalAppId: "70ff0fbf-bc3e-45eb-ba4f-7df4952b215c",  counter: false }    // atppickleballclub.github.io/eventsapp-test/
 };
 const IS_TEST = /eventsapp-test/i.test(location.hostname + location.pathname);
 const SITE = IS_TEST ? SITES.test : SITES.live;
@@ -493,7 +493,10 @@ if ("serviceWorker" in navigator && location.protocol === "https:" && /atppickle
         appId: SITE.oneSignalAppId,
         serviceWorkerPath: base.slice(1) + "push/onesignal/OneSignalSDKWorker.js",
         serviceWorkerParam: { scope: base + "push/onesignal/" },
-        notifyButton: { enable: false }
+        notifyButton: { enable: false },
+        // Never pop OneSignal's own "allow notifications?" box; the app's
+        // "Turn on notifications" button asks instead.
+        promptOptions: { slidedown: { prompts: [{ type: "push", autoPrompt: false }] } }
       });
     } catch (e) { return; }
     if (!OneSignal.Notifications.isPushSupported()) return;
