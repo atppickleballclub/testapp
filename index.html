@@ -12,6 +12,16 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="ATP Events">
+<script>
+/* Same files go in both repos. On the test address, swap to the test
+   manifest, TEST icons and red bar colour. The live address keeps the normal ones. */
+if (/eventsapp-test|\/testapp\//i.test(location.hostname + location.pathname)) {
+  document.querySelector('link[rel="manifest"]').href = "manifest-test.json";
+  document.querySelector('link[rel="icon"]').href = "icons/test/icon-192.png";
+  document.querySelector('link[rel="apple-touch-icon"]').href = "icons/test/apple-touch-icon.png";
+  document.querySelector('meta[name="theme-color"]').content = "#b3261e";
+}
+</script>
 <title>ATP Events</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="description" content="ATP Pickleball Club events — interclubs, tournaments and results.">
@@ -187,6 +197,17 @@ a:focus-visible { outline: 3px solid var(--court); outline-offset: 3px; }
 .notify .note { color: var(--muted); font-size: 14px; }
 
 /* Install tip */
+/* Latest updates */
+.updates { display: grid; gap: 12px; }
+.updates h2 { margin: 8px 2px 0; font-family: var(--display); font-weight: 700; font-size: 13px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.upd { background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; padding: 14px 16px; display: grid; gap: 6px; }
+.upd .when { font-size: 13px; color: var(--muted); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.upd .when .chip { color: #b3261e; }
+.upd h3 { margin: 0; font-family: var(--display); font-weight: 700; font-size: 21px; line-height: 1.15; text-wrap: balance; }
+.upd p { margin: 0; font-size: 16px; line-height: 1.45; white-space: pre-line; overflow-wrap: anywhere; }
+.upd a { justify-self: start; margin-top: 4px; min-height: 40px; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 999px; background: var(--court-deep); color: var(--ball); text-decoration: none; font: 700 16px var(--display); letter-spacing: .06em; text-transform: uppercase; }
+.upd a:focus-visible, .updates .more:focus-visible { outline: 3px solid var(--court); outline-offset: 2px; }
+.updates .more { justify-self: start; min-height: 40px; border: 0; background: none; color: var(--court); font: 600 15px var(--body); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: 0 2px; }
 .install { background: var(--surface); border: 1px dashed var(--rule); border-radius: 14px; padding: 14px; display: grid; gap: 8px; font-size: 15px; }
 .install strong { font-family: var(--display); font-size: 17px; letter-spacing: .04em; text-transform: uppercase; }
 .install button { justify-self: start; min-height: 44px; padding: 0 18px; border-radius: 999px; border: 0; background: var(--court-deep); color: var(--line); font: 700 16px var(--display); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
@@ -208,6 +229,7 @@ footer a { color: var(--court); font-weight: 600; text-decoration: underline; te
     <div class="club"><small>ATP Pickleball Club</small>Events</div>
       </header>
   <main id="app"></main>
+  <section class="updates" id="updates" hidden></section>
   <div class="notify" id="notify" hidden></div>
   <div class="install" id="install" hidden></div>
   <footer>ATP Pickleball Club · <a href="https://www.atppickleballclub.com.au">www.atppickleballclub.com.au</a></footer>
@@ -224,6 +246,7 @@ const SITES = {
 };
 const IS_TEST = /eventsapp-test|\/testapp\//i.test(location.hostname + location.pathname);
 const SITE = IS_TEST ? SITES.test : SITES.live;
+const FIREBASE = { key: "AIzaSyAykyvBpr-3H4_gCm--8tDN2IhV-2EFfj0", project: "atp-events" };
 const ON_REAL_SITE = location.protocol === "https:" && /atppickleballclub|github\.io/.test(location.hostname);
 if (IS_TEST) {
   document.getElementById("testbar").hidden = false;
@@ -530,6 +553,40 @@ if ("serviceWorker" in navigator && location.protocol === "https:" && /atppickle
     OneSignal.Notifications.addEventListener("permissionChange", show);
     show();
   });
+})();
+/* ===== Latest updates =====
+   Messages the committee posts from post.html, newest first. Anyone can read
+   them. Posts marked "test" only show in the test app.                    */
+(function latestUpdates() {
+  const box = document.getElementById("updates");
+  if (!/^https?:$/.test(location.protocol)) return;
+  const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE.project}/databases/(default)/documents/updates?orderBy=createdAt%20desc&pageSize=30&key=${FIREBASE.key}`;
+  fetch(url).then(r => r.ok ? r.json() : null).then(j => {
+    if (!j || !j.documents) return;
+    const items = j.documents.map(d => {
+      const f = d.fields || {};
+      return { title: f.title?.stringValue || "", message: f.message?.stringValue || "", link: f.link?.stringValue || "",
+               target: f.target?.stringValue || "live", at: f.createdAt?.timestampValue || "" };
+    }).filter(u => u.title && (IS_TEST || u.target === "live"));
+    if (!items.length) return;
+    const when = iso => iso ? new Date(iso).toLocaleString("en-AU", { timeZone: "Australia/Sydney", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : "";
+    const card = u => `<article class="upd">
+        <div class="when"><span>${esc(when(u.at))}</span>${u.target === "test" ? '<span class="chip">Test</span>' : ""}</div>
+        <h3>${esc(u.title)}</h3>
+        ${u.message ? `<p>${esc(u.message)}</p>` : ""}
+        ${/^https:\/\//.test(u.link) ? `<a href="${esc(u.link)}">Open →</a>` : ""}
+      </article>`;
+    let showAll = false;
+    const draw = () => {
+      const list = showAll ? items.slice(0, 15) : items.slice(0, 3);
+      box.innerHTML = `<h2>Latest updates</h2>${list.map(card).join("")}` +
+        (items.length > 3 ? `<button type="button" class="more" id="upd-more">${showAll ? "Show fewer" : `Show all updates (${Math.min(items.length, 15)})`}</button>` : "");
+      const b = document.getElementById("upd-more");
+      if (b) b.onclick = () => { showAll = !showAll; draw(); };
+      box.hidden = false;
+    };
+    draw();
+  }).catch(() => {});
 })();
 </script>
 </body>

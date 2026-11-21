@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0b344b">
+<title>Post an Update</title>
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Layout: one column. Sign in, then a form with a live preview of the notification, then recent posts. */
+:root {
+  --court: #1a78a8; --court-deep: #0b344b; --ball: #d7db38; --rim: #aec11d;
+  --bg: #eef3f4; --surface: #ffffff; --fg: #0b2433; --muted: #557080; --rule: #d3e0e4; --bad: #b3261e; --ok: #2f7d4a;
+  --display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --court: #4cb6e6; --court-deep: #0e3a53; --bg: #071d2a; --surface: #0f2c3f; --fg: #e6f0f3; --muted: #93abb8; --rule: #1f4257; --bad: #ff8a80; --ok: #7fd49a; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.45; }
+.wrap { max-width: 640px; margin: 0 auto; padding-block: 20px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 16px; }
+header { display: flex; align-items: center; gap: 14px; }
+header img { width: 54px; height: auto; }
+header small { display: block; font-family: var(--display); font-weight: 600; font-size: 13px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+h1 { margin: 0; font-family: var(--display); font-weight: 800; font-size: 30px; line-height: 1; text-transform: uppercase; }
+h2 { margin: 0; font-family: var(--display); font-weight: 700; font-size: 14px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.testbar { background: #b3261e; color: #fff; border-radius: 12px; padding: 10px 14px; font-size: 14px; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 16px; padding: 18px; display: grid; gap: 14px; }
+label { font-weight: 600; font-size: 15px; display: grid; gap: 4px; }
+label small { font-weight: 400; color: var(--muted); }
+input, textarea { font: inherit; padding: 10px 12px; min-height: 44px; border-radius: 10px; border: 1px solid var(--rule); background: var(--bg); color: var(--fg); width: 100%; }
+textarea { min-height: 96px; resize: vertical; }
+fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 8px; }
+legend { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+.choice { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border: 1px solid var(--rule); border-radius: 12px; font-weight: 400; cursor: pointer; }
+.choice input { width: 20px; min-height: 20px; margin: 2px 0 0; flex: none; }
+.choice b { display: block; }
+.choice span span { color: var(--muted); font-size: 14px; }
+button { min-height: 48px; border: 0; border-radius: 999px; background: var(--court-deep); color: var(--ball); font: 700 18px var(--display); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; padding: 0 22px; }
+button.danger { background: var(--bad); color: #fff; }
+button.ghost { background: transparent; color: var(--court); min-height: 40px; font-size: 15px; padding: 0; text-decoration: underline; text-underline-offset: 3px; }
+button:disabled { opacity: .6; cursor: default; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, .choice:focus-within { outline: 3px solid var(--court); outline-offset: 2px; }
+.row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.err { color: var(--bad); margin: 0; }
+.ok { color: var(--ok); margin: 0; font-weight: 600; }
+.note { color: var(--muted); font-size: 14px; margin: 0; }
+/* notification preview, roughly how an Android phone shows it */
+.preview { background: var(--bg); border-radius: 16px; padding: 12px 14px; display: grid; grid-template-columns: 1fr 40px; gap: 4px 12px; border: 1px solid var(--rule); }
+.preview .app { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
+.preview .t { font-weight: 700; overflow-wrap: anywhere; }
+.preview .m { font-size: 15px; overflow-wrap: anywhere; white-space: pre-line; }
+.preview img { grid-column: 2; grid-row: 2 / span 2; width: 40px; height: 40px; border-radius: 8px; }
+.confirm { border: 2px solid var(--bad); border-radius: 14px; padding: 14px; display: grid; gap: 10px; }
+.post { border-top: 1px solid var(--rule); padding-top: 12px; display: grid; gap: 4px; }
+.post:first-of-type { border-top: 0; padding-top: 0; }
+.post .meta { font-size: 13px; color: var(--muted); }
+.post .tag { font-family: var(--display); font-weight: 700; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; border: 1px solid currentColor; border-radius: 999px; padding: 0 8px; }
+.post .tag.test { color: var(--bad); }
+.post .tag.live { color: var(--ok); }
+.steps { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="icons/logo.png" alt="ATP Pickleball Club">
+    <div><small>ATP Events app</small><h1>Post an update</h1></div>
+  </header>
+  <div class="testbar" id="testbar" hidden><b>Test version.</b> Posts here are marked test unless you choose Members.</div>
+
+  <form class="card" id="login" hidden>
+    <label for="email">Your email<input id="email" type="email" autocomplete="username" required></label>
+    <label for="pw">Password<input id="pw" type="password" autocomplete="current-password" required></label>
+    <button type="submit" id="go">Sign in</button>
+    <p class="err" id="login-err" hidden></p>
+  </form>
+
+  <div class="card" id="denied" hidden>
+    <p class="err" id="denied-msg">You're signed in, but you don't have access to post updates.</p>
+    <p class="note">Ask Les to add your email to the senders list.</p>
+    <button type="button" class="ghost" id="out1">Sign out</button>
+  </div>
+
+  <form class="card" id="compose" hidden novalidate>
+    <label for="title">Title <small>Up to 65 characters</small><input id="title" maxlength="65" required placeholder="Draws are up!"></label>
+    <label for="message">Message <small>Up to 240 characters</small><textarea id="message" maxlength="240" placeholder="Interclub Challenge draws are now live. Check your court and start time."></textarea></label>
+    <label for="link">Link when tapped <small>Optional. Must start with https://</small><input id="link" type="url" inputmode="url" placeholder="https://interclub.atppickleballclub.com.au"></label>
+    <fieldset>
+      <legend>Send to</legend>
+      <label class="choice"><input type="radio" name="target" id="t-test" value="test" checked><span><b>Test app only</b><span>You and any testers. Use this to check a message first.</span></span></label>
+      <label class="choice"><input type="radio" name="target" id="t-live" value="live"><span><b>Members (real app)</b><span>Everyone with ATP Events. Also shows in the app's Latest updates.</span></span></label>
+    </fieldset>
+    <div>
+      <h2 style="margin-bottom:8px">Preview</h2>
+      <div class="preview" aria-live="polite">
+        <div class="app">ATP Events · now</div>
+        <div class="t" id="pv-t">Draws are up!</div>
+        <img src="icons/icon-192.png" alt="">
+        <div class="m" id="pv-m"></div>
+      </div>
+    </div>
+    <p class="err" id="form-err" hidden></p>
+    <div class="confirm" id="confirm" hidden>
+      <b>Send this to every member with the app?</b>
+      <div class="row"><button type="button" class="danger" id="yes">Yes, send to members</button><button type="button" class="ghost" id="no">Cancel</button></div>
+    </div>
+    <div class="row" id="post-row"><button type="submit" id="post">Post update</button><button type="button" class="ghost" id="out2">Sign out</button></div>
+  </form>
+
+  <div class="card" id="done" hidden>
+    <p class="ok" id="done-msg">Posted.</p>
+    <div id="manual">
+      <p class="note" style="margin-bottom:6px">It's now in the app's Latest updates. To send it as a push notification:</p>
+      <ol class="steps">
+        <li>Open <a href="https://dashboard.onesignal.com" target="_blank" rel="noopener">OneSignal</a> and pick <b id="os-app">ATP Events TEST</b>.</li>
+        <li>Messages → Push → New Push, audience <b>Total Subscriptions</b> (or Subscribed Users).</li>
+        <li>Paste the title and message, set the Launch URL to the link, and Send.</li>
+      </ol>
+      <div class="row" style="margin-top:8px"><button type="button" class="ghost" id="copy">Copy title and message</button></div>
+    </div>
+    <button type="button" id="another">Post another</button>
+  </div>
+
+  <section class="card" id="recent" hidden>
+    <h2>Recent posts</h2>
+    <div id="posts"></div>
+  </section>
+</div>
+
+<script>
+/* ===== Settings =====
+   AUTO_PUSH: false until the Cloud Function is switched on (Blaze plan).
+   While false, posting saves to Latest updates and shows the steps to send
+   the push from OneSignal by hand.                                       */
+const AUTO_PUSH = false;
+const FB_KEY = "AIzaSyAykyvBpr-3H4_gCm--8tDN2IhV-2EFfj0";
+const FB_PROJECT = "atp-events";
+const IS_TEST = /eventsapp-test|\/testapp\//i.test(location.hostname + location.pathname);
+const DOCS = `https://firestore.googleapis.com/v1/projects/${FB_PROJECT}/databases/(default)/documents`;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const store = { get(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } },
+                set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} },
+                del(k) { try { sessionStorage.removeItem(k); } catch (e) {} } };
+let me = null; let lastPost = null;
+
+if (IS_TEST) $("testbar").hidden = false;
+else { $("t-live").checked = true; }
+
+function show(which) { ["login", "denied", "compose", "done"].forEach(id => $(id).hidden = id !== which); }
+function token() { return store.get("atpToken") && Number(store.get("atpTokenExp") || 0) > Date.now() ? store.get("atpToken") : null; }
+function signOut() { ["atpToken", "atpTokenExp", "atpEmail"].forEach(k => store.del(k)); $("recent").hidden = true; show("login"); }
+$("out1").onclick = signOut; $("out2").onclick = signOut;
+
+$("login").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  $("go").disabled = true; $("go").textContent = "Signing in…"; $("login-err").hidden = true;
+  try {
+    const r = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FB_KEY}`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: $("email").value.trim(), password: $("pw").value, returnSecureToken: true })
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error();
+    store.set("atpToken", j.idToken);
+    store.set("atpTokenExp", String(Date.now() + (Number(j.expiresIn) - 60) * 1000));
+    store.set("atpEmail", j.email);
+    start();
+  } catch (e) {
+    $("login-err").textContent = "That email and password didn't work."; $("login-err").hidden = false;
+  } finally { $("go").disabled = false; $("go").textContent = "Sign in"; }
+});
+
+async function start() {
+  const t = token();
+  if (!t) return show("login");
+  me = (store.get("atpEmail") || "").toLowerCase();
+  // Check the senders list (config/senders → emails)
+  try {
+    const r = await fetch(`${DOCS}/config/senders`, { headers: { Authorization: "Bearer " + t } });
+    if (r.status === 401) return signOut();
+    const j = r.ok ? await r.json() : {};
+    const emails = (j.fields?.emails?.arrayValue?.values || []).map(v => (v.stringValue || "").toLowerCase());
+    if (!emails.includes(me)) { $("denied-msg").textContent = `You're signed in as ${me}, but you don't have access to post updates.`; return show("denied"); }
+  } catch (e) { $("denied-msg").textContent = "Couldn't check your access. Check your connection and try again."; return show("denied"); }
+  show("compose"); loadRecent();
+}
+
+// live preview
+function preview() {
+  $("pv-t").textContent = $("title").value.trim() || "Draws are up!";
+  $("pv-m").textContent = $("message").value.trim();
+}
+["title", "message"].forEach(id => $(id).addEventListener("input", preview));
+preview();
+
+function target() { return $("t-live").checked ? "live" : "test"; }
+function check() {
+  const title = $("title").value.trim(), message = $("message").value.trim(), link = $("link").value.trim();
+  if (!title) return "Add a title.";
+  if (link && !/^https:\/\/\S+$/.test(link)) return "The link must start with https:// and have no spaces.";
+  return "";
+}
+
+$("compose").addEventListener("submit", ev => {
+  ev.preventDefault();
+  const problem = check();
+  $("form-err").textContent = problem; $("form-err").hidden = !problem;
+  if (problem) return;
+  if (target() === "live") { $("confirm").hidden = false; $("post-row").hidden = true; $("yes").focus(); return; }
+  send();
+});
+$("no").onclick = () => { $("confirm").hidden = true; $("post-row").hidden = false; };
+$("yes").onclick = () => { $("confirm").hidden = true; $("post-row").hidden = false; send(); };
+
+async function send(fromPost) {
+  const t = token(); if (!t) return signOut();
+  const data = fromPost || { title: $("title").value.trim(), message: $("message").value.trim(), link: $("link").value.trim(), target: target() };
+  const fields = {
+    title: { stringValue: data.title }, message: { stringValue: data.message }, link: { stringValue: data.link },
+    target: { stringValue: data.target }, author: { stringValue: me }
+  };
+  const id = "u" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  const body = { writes: [{
+    update: { name: `projects/${FB_PROJECT}/databases/(default)/documents/updates/${id}`, fields },
+    currentDocument: { exists: false },
+    updateTransforms: [{ fieldPath: "createdAt", setToServerValue: "REQUEST_TIME" }]
+  }] };
+  $("post").disabled = true;
+  try {
+    const r = await fetch(`https://firestore.googleapis.com/v1/projects/${FB_PROJECT}/databases/(default)/documents:commit`, {
+      method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + t }, body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error(r.status === 403 ? "Firebase refused the post. Check you're on the senders list and the rules are published." : "Couldn't post. Check your connection and try again.");
+    lastPost = data;
+    $("done-msg").textContent = data.target === "live" ? "Posted to members." : "Posted to the test app.";
+    $("os-app").textContent = data.target === "live" ? "ATP Events" : "ATP Events TEST";
+    $("manual").hidden = AUTO_PUSH;
+    if (AUTO_PUSH) $("done-msg").textContent += " The notification is on its way.";
+    show("done"); loadRecent();
+  } catch (e) {
+    $("form-err").textContent = e.message; $("form-err").hidden = false; show("compose");
+  } finally { $("post").disabled = false; }
+}
+
+$("copy").onclick = async () => {
+  if (!lastPost) return;
+  const text = lastPost.title + "\n" + lastPost.message + (lastPost.link ? "\n" + lastPost.link : "");
+  try { await navigator.clipboard.writeText(text); $("copy").textContent = "Copied"; }
+  catch (e) { $("copy").textContent = "Couldn't copy, select the text in the form instead"; }
+  setTimeout(() => $("copy").textContent = "Copy title and message", 2500);
+};
+$("another").onclick = () => { $("compose").reset(); if (!IS_TEST) $("t-live").checked = true; preview(); show("compose"); $("title").focus(); };
+
+async function loadRecent() {
+  const t = token(); if (!t) return;
+  try {
+    const r = await fetch(`${DOCS}/updates?orderBy=createdAt%20desc&pageSize=15&key=${FB_KEY}`);
+    const j = r.ok ? await r.json() : {};
+    const posts = (j.documents || []).map(d => {
+      const f = d.fields || {};
+      return { name: d.name, title: f.title?.stringValue || "", message: f.message?.stringValue || "", link: f.link?.stringValue || "",
+        target: f.target?.stringValue || "live", author: f.author?.stringValue || "", at: f.createdAt?.timestampValue || "",
+        push: f.pushStatus?.stringValue || "" };
+    });
+    if (!posts.length) { $("recent").hidden = true; return; }
+    const when = iso => iso ? new Date(iso).toLocaleString("en-AU", { timeZone: "Australia/Sydney", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : "";
+    $("posts").innerHTML = posts.map((p, i) => `<div class="post">
+        <div class="row" style="gap:8px"><span class="tag ${p.target}">${p.target === "live" ? "Members" : "Test"}</span><span class="meta">${esc(when(p.at))} · ${esc(p.author)}${p.push ? " · push " + esc(p.push) : ""}</span></div>
+        <b>${esc(p.title)}</b>${p.message ? `<span>${esc(p.message)}</span>` : ""}
+        <div class="row">
+          ${p.target === "test" ? `<button type="button" class="ghost" data-promote="${i}">Send this to members</button>` : ""}
+          <button type="button" class="ghost" data-del="${i}">Remove</button>
+        </div>
+      </div>`).join("");
+    $("posts").querySelectorAll("[data-promote]").forEach(b => b.onclick = () => {
+      const p = posts[+b.dataset.promote];
+      $("title").value = p.title; $("message").value = p.message; $("link").value = p.link; $("t-live").checked = true; preview();
+      show("compose"); $("compose").scrollIntoView({ behavior: "smooth" }); $("title").focus();
+    });
+    $("posts").querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
+      const p = posts[+b.dataset.del];
+      if (b.dataset.sure !== "1") { b.dataset.sure = "1"; b.textContent = "Tap again to remove"; return; }
+      const r = await fetch(`https://firestore.googleapis.com/v1/${p.name}`, { method: "DELETE", headers: { Authorization: "Bearer " + token() } });
+      if (r.ok) loadRecent(); else b.textContent = "Couldn't remove";
+    });
+    $("recent").hidden = false;
+  } catch (e) {}
+}
+
+start();
+</script>
+</body>
+</html>

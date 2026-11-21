@@ -1,12 +1,12 @@
 {
-  "name": "ATP Events TEST",
-  "short_name": "ATP TEST",
+  "name": "ATP Events",
+  "short_name": "ATP Events",
   "description": "ATP Pickleball Club events, live scores and results",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#eef3f4",
-  "theme_color": "#b3261e",
+  "theme_color": "#0b344b",
   "icons": [
     {
       "src": "icons/icon-192.png",
@@ -24,6 +24,5 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ],
-  "id": "atp-events-test"
+  ]
 }
